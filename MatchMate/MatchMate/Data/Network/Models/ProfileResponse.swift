@@ -7,7 +7,7 @@
 
 import Foundation
 
-nonisolated struct ProfileResponse: Decodable, Sendable {
+struct ProfileResponse: Decodable, Sendable {
     let results: [Profile]
     let info: Info
 }

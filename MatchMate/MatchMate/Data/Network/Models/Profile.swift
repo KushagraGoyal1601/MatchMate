@@ -7,7 +7,7 @@
 
 import Foundation
 
-nonisolated struct Profile: Decodable, Sendable {
+struct Profile: Decodable, Sendable {
     let login: Login
     let name: Name
     let location: Location
