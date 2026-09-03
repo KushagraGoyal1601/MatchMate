@@ -22,7 +22,7 @@ struct ProfileListView: View {
                 .background(Theme.pageBackground)
                 .navigationTitle("Profile Matches")
         }
-        .task { await viewModel.loadProfiles() }
+        .task { await viewModel.loadInitialIfNeeded() }
     }
 
     @ViewBuilder
@@ -51,12 +51,46 @@ struct ProfileListView: View {
                         onAccept: { viewModel.accept(profile) },
                         onDecline: { viewModel.decline(profile) }
                     )
+                    .onAppear {
+                        // Deliberately not `.task`: SwiftUI cancels that when the
+                        // row scrolls away, which would kill the in-flight page.
+                        Task { await viewModel.loadNextPageIfNeeded(after: profile) }
+                    }
                 }
+
+                paginationFooter
             }
             .padding(.horizontal, Theme.Layout.cardHorizontalPadding)
             .padding(.vertical, Theme.Layout.cardSpacing)
         }
-        .refreshable { await viewModel.loadProfiles() }
+        .refreshable { await viewModel.refresh() }
+    }
+
+    @ViewBuilder
+    private var paginationFooter: some View {
+        if let message = viewModel.errorMessage {
+            VStack(spacing: 12) {
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+
+                Button("Retry") {
+                    Task { await viewModel.retry() }
+                }
+                .buttonStyle(.bordered)
+                .tint(Theme.accent)
+            }
+            .padding(.vertical, 8)
+        } else if viewModel.isLoading {
+            ProgressView()
+                .padding(.vertical, 12)
+        } else if viewModel.showsEndOfList {
+            Text("You're all caught up")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .padding(.vertical, 12)
+        }
     }
 
     private func errorState(message: String) -> some View {
@@ -66,7 +100,7 @@ struct ProfileListView: View {
             Text(message)
         } actions: {
             Button("Try Again") {
-                Task { await viewModel.loadProfiles() }
+                Task { await viewModel.retry() }
             }
             .buttonStyle(.borderedProminent)
             .tint(Theme.accent)
