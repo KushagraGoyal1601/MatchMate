@@ -48,8 +48,8 @@ struct ProfileListView: View {
                 ForEach(viewModel.profiles) { profile in
                     ProfileCardView(
                         profile: profile,
-                        onAccept: { viewModel.accept(profile) },
-                        onDecline: { viewModel.decline(profile) }
+                        onAccept: { Task { await viewModel.accept(profile) } },
+                        onDecline: { Task { await viewModel.decline(profile) } }
                     )
                     .onAppear {
                         // Deliberately not `.task`: SwiftUI cancels that when the
@@ -111,7 +111,7 @@ struct ProfileListView: View {
 #Preview {
     ProfileListView(
         viewModel: ProfileListViewModel(
-            service: ProfileService(client: URLSessionHTTPClient())
+            repository: AppDependencies.live().profileRepository
         )
     )
 }

@@ -13,12 +13,10 @@ protocol HTTPClient: Sendable {
 
 struct URLSessionHTTPClient: HTTPClient {
 
-    static let randomUserBaseURL = URL(string: "https://randomuser.me")!
-
     private let session: URLSession
     private let baseURL: URL
 
-    init(session: URLSession? = nil, baseURL: URL = randomUserBaseURL) {
+    init(session: URLSession? = nil, baseURL: URL = APIConfiguration.baseURL) {
         self.session = session ?? Self.makeDefaultSession()
         self.baseURL = baseURL
     }

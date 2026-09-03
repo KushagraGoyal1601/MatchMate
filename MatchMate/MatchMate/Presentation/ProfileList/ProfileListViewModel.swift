@@ -18,13 +18,11 @@ final class ProfileListViewModel {
 
     private var currentPage = 0
 
-    private var decisions: [MatchProfile.ID: MatchStatus] = [:]
-
-    private let service: ProfileFetching
+    private let repository: ProfileRepository
     private let prefetchThreshold: Int
 
-    init(service: ProfileFetching, prefetchThreshold: Int = 3) {
-        self.service = service
+    init(repository: ProfileRepository, prefetchThreshold: Int = 3) {
+        self.repository = repository
         self.prefetchThreshold = prefetchThreshold
     }
 
@@ -57,12 +55,12 @@ final class ProfileListViewModel {
         await load(page: profiles.isEmpty ? 1 : currentPage + 1)
     }
 
-    func accept(_ profile: MatchProfile) {
-        setStatus(.accepted, for: profile.id)
+    func accept(_ profile: MatchProfile) async {
+        await setStatus(.accepted, for: profile.id)
     }
 
-    func decline(_ profile: MatchProfile) {
-        setStatus(.declined, for: profile.id)
+    func decline(_ profile: MatchProfile) async {
+        await setStatus(.declined, for: profile.id)
     }
 
     private func load(page: Int) async {
@@ -73,42 +71,40 @@ final class ProfileListViewModel {
         defer { isLoading = false }
 
         do {
-            let fetched = try await service.fetchProfiles(page: page)
-            apply(ProfileMapper.map(fetched), replacingAll: page == 1)
+            let fetched = try await repository.profiles(page: page)
+            apply(fetched, replacingAll: page == 1)
             currentPage = page
             hasMorePages = !fetched.isEmpty
+        } catch is CancellationError {
+            return
+        } catch let error as AppError {
+            errorMessage = error.message
         } catch {
-            errorMessage = message(for: error)
+            errorMessage = error.localizedDescription
         }
     }
 
-    private func setStatus(_ status: MatchStatus, for id: MatchProfile.ID) {
-        decisions[id] = status
-
+    private func setStatus(_ status: MatchStatus, for id: MatchProfile.ID) async {
         guard let index = profiles.firstIndex(where: { $0.id == id }) else { return }
+
+        let previous = profiles[index].status
         profiles[index].status = status
+
+        do {
+            try await repository.updateStatus(status, forID: id)
+        } catch {
+            guard let index = profiles.firstIndex(where: { $0.id == id }) else { return }
+            profiles[index].status = previous
+            errorMessage = (error as? AppError)?.message ?? error.localizedDescription
+        }
     }
 
     private func apply(_ fetched: [MatchProfile], replacingAll: Bool) {
-        let merged = fetched.map { profile in
-            var profile = profile
-            profile.status = decisions[profile.id] ?? profile.status
-            return profile
-        }
-
         if replacingAll {
-            profiles = merged
+            profiles = fetched
         } else {
             let existingIDs = Set(profiles.map(\.id))
-            profiles.append(contentsOf: merged.filter { !existingIDs.contains($0.id) })
+            profiles.append(contentsOf: fetched.filter { !existingIDs.contains($0.id) })
         }
-    }
-
-    private func message(for error: Error) -> String? {
-        guard let networkError = error as? NetworkError else {
-            return error.localizedDescription
-        }
-        guard networkError != .cancelled else { return nil }
-        return networkError.errorDescription
     }
 }
