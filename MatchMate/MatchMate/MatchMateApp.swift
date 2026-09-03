@@ -11,7 +11,11 @@ import SwiftUI
 struct MatchMateApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ProfileListView(
+                viewModel: ProfileListViewModel(
+                    service: ProfileService(client: URLSessionHTTPClient())
+                )
+            )
         }
     }
 }
