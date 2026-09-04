@@ -35,6 +35,13 @@ final class ProfileListViewModel {
         !hasMorePages && !profiles.isEmpty
     }
 
+    func observeProfileUpdates() async {
+        for await updated in await repository.profileUpdates() {
+            guard let index = profiles.firstIndex(where: { $0.id == updated.id }) else { continue }
+            profiles[index] = updated
+        }
+    }
+
     func observeConnection() async {
         for await isConnected in repository.connectionUpdates() {
             isOffline = !isConnected

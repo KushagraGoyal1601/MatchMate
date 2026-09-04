@@ -10,6 +10,7 @@ import Foundation
 protocol ProfileRepositoryProtocol: Sendable {
     func profiles(page: Int) async throws -> [MatchProfile]
     func updateStatus(_ status: MatchStatus, forID id: MatchProfile.ID) async throws
+    func profileUpdates() async -> AsyncStream<MatchProfile>
     func connectionUpdates() -> AsyncStream<Bool>
 }
 
@@ -19,6 +20,8 @@ actor ProfileRepository: ProfileRepositoryProtocol {
     private let persistence: ProfilePersistenceRepositoryProtocol
     private let monitor: NetworkMonitorProtocol
     private let pageSize: Int
+
+    private var subscribers: [UUID: AsyncStream<MatchProfile>.Continuation] = [:]
 
     init(
         network: ProfileNetworkRepositoryProtocol,
@@ -34,6 +37,17 @@ actor ProfileRepository: ProfileRepositoryProtocol {
 
     nonisolated func connectionUpdates() -> AsyncStream<Bool> {
         monitor.connectionUpdates()
+    }
+
+    func profileUpdates() -> AsyncStream<MatchProfile> {
+        AsyncStream { continuation in
+            let id = UUID()
+            subscribers[id] = continuation
+
+            continuation.onTermination = { [weak self] _ in
+                Task { await self?.removeSubscriber(id) }
+            }
+        }
     }
 
     func profiles(page: Int) async throws -> [MatchProfile] {
@@ -69,8 +83,24 @@ actor ProfileRepository: ProfileRepositoryProtocol {
     func updateStatus(_ status: MatchStatus, forID id: MatchProfile.ID) async throws {
         do {
             try await persistence.updateStatus(status, forID: id)
+
+            // Broadcast what the database actually holds, not what the caller
+            // asked for, so every screen converges on the same stored truth.
+            if let stored = try await persistence.profile(id: id) {
+                broadcast(stored)
+            }
         } catch {
             throw mapped(error)
+        }
+    }
+
+    private func removeSubscriber(_ id: UUID) {
+        subscribers[id] = nil
+    }
+
+    private func broadcast(_ profile: MatchProfile) {
+        for continuation in subscribers.values {
+            continuation.yield(profile)
         }
     }
 

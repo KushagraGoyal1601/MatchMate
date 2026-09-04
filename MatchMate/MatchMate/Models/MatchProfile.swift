@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct MatchProfile: Identifiable, Equatable, Sendable {
+struct MatchProfile: Identifiable, Hashable, Sendable {
     let id: String
     let firstName: String
     let lastName: String

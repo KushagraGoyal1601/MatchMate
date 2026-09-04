@@ -35,4 +35,8 @@ final class DependencyManager {
     func makeProfileListViewModel() -> ProfileListViewModel {
         ProfileListViewModel(repository: profileRepository)
     }
+
+    func makeProfileDetailViewModel(for profile: MatchProfile) -> ProfileDetailViewModel {
+        ProfileDetailViewModel(profile: profile, repository: profileRepository)
+    }
 }

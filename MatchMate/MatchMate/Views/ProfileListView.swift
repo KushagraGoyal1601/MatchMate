@@ -26,9 +26,15 @@ struct ProfileListView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Theme.pageBackground)
                 .navigationTitle("Profile Matches")
+                .navigationDestination(for: MatchProfile.self) { profile in
+                    ProfileDetailView(
+                        viewModel: DependencyManager.shared.makeProfileDetailViewModel(for: profile)
+                    )
+                }
         }
         .task { await viewModel.loadInitialIfNeeded() }
         .task { await viewModel.observeConnection() }
+        .task { await viewModel.observeProfileUpdates() }
     }
 
     @ViewBuilder
