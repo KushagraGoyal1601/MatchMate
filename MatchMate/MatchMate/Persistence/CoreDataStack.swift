@@ -14,14 +14,8 @@ final class CoreDataStack: @unchecked Sendable {
     private let container: NSPersistentContainer
     private let loadError: PersistenceError?
 
-    init(inMemory: Bool = false, storeURL: URL? = nil) {
+    init() {
         container = NSPersistentContainer(name: Self.modelName)
-
-        if let storeURL {
-            container.persistentStoreDescriptions.first?.url = storeURL
-        } else if inMemory {
-            container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")
-        }
 
         var failure: PersistenceError?
         container.loadPersistentStores { _, error in

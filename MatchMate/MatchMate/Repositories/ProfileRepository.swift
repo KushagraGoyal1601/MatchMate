@@ -94,10 +94,6 @@ actor ProfileRepository: ProfileRepositoryProtocol {
         }
     }
 
-    var subscriberCount: Int {
-        subscribers.count
-    }
-
     private func removeSubscriber(_ id: UUID) {
         subscribers[id] = nil
     }
