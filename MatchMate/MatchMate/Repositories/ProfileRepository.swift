@@ -10,35 +10,60 @@ import Foundation
 protocol ProfileRepositoryProtocol: Sendable {
     func profiles(page: Int) async throws -> [MatchProfile]
     func updateStatus(_ status: MatchStatus, forID id: MatchProfile.ID) async throws
+    func connectionUpdates() -> AsyncStream<Bool>
 }
 
 actor ProfileRepository: ProfileRepositoryProtocol {
 
     private let network: ProfileNetworkRepositoryProtocol
     private let persistence: ProfilePersistenceRepositoryProtocol
+    private let monitor: NetworkMonitorProtocol
+    private let pageSize: Int
 
     init(
         network: ProfileNetworkRepositoryProtocol,
-        persistence: ProfilePersistenceRepositoryProtocol
+        persistence: ProfilePersistenceRepositoryProtocol,
+        monitor: NetworkMonitorProtocol,
+        pageSize: Int = APIConfiguration.pageSize
     ) {
         self.network = network
         self.persistence = persistence
+        self.monitor = monitor
+        self.pageSize = pageSize
+    }
+
+    nonisolated func connectionUpdates() -> AsyncStream<Bool> {
+        monitor.connectionUpdates()
     }
 
     func profiles(page: Int) async throws -> [MatchProfile] {
-        do {
-            let profiles = try await network.profiles(page: page)
-            let statuses = try await persistence.statuses()
+        let startIndex = (page - 1) * pageSize
+        var networkFailure: Error?
 
-            return profiles.map { profile in
-                guard let status = statuses[profile.id] else { return profile }
-                var profile = profile
-                profile.status = status
-                return profile
+        if monitor.isConnected {
+            do {
+                let fetched = try await network.profiles(page: page)
+                try await persistence.save(fetched, startingAtSortIndex: startIndex)
+            } catch let error as NetworkError where error == .cancelled {
+                throw CancellationError()
+            } catch {
+                networkFailure = error
             }
-        } catch {
-            throw mapped(error)
         }
+
+        let cached: [MatchProfile]
+        do {
+            cached = try await persistence.profiles(fromSortIndex: startIndex, limit: pageSize)
+        } catch {
+            throw mapped(networkFailure ?? error)
+        }
+
+        if cached.isEmpty {
+            if let networkFailure { throw mapped(networkFailure) }
+            if !monitor.isConnected { throw AppError.offline }
+        }
+
+        return cached
     }
 
     func updateStatus(_ status: MatchStatus, forID id: MatchProfile.ID) async throws {
@@ -50,19 +75,25 @@ actor ProfileRepository: ProfileRepositoryProtocol {
     }
 
     private func mapped(_ error: Error) -> Error {
-        guard let networkError = error as? NetworkError else {
-            return AppError.unexpected(error.localizedDescription)
+        if let networkError = error as? NetworkError {
+            switch networkError {
+            case .cancelled:
+                return CancellationError()
+            case .notConnected:
+                return AppError.offline
+            default:
+                return AppError.requestFailed(
+                    networkError.errorDescription ?? "Something went wrong. Please try again."
+                )
+            }
         }
 
-        switch networkError {
-        case .cancelled:
-            return CancellationError()
-        case .notConnected:
-            return AppError.offline
-        default:
-            return AppError.requestFailed(
-                networkError.errorDescription ?? "Something went wrong. Please try again."
+        if let persistenceError = error as? PersistenceError {
+            return AppError.storageFailed(
+                persistenceError.errorDescription ?? "The local database is unavailable."
             )
         }
+
+        return AppError.unexpected(error.localizedDescription)
     }
 }

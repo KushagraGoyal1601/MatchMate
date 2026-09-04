@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23504" systemVersion="24F74" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="NO" userDefinedModelVersionIdentifier="">
+    <entity name="ProfileEntity" representedClassName="ProfileEntity" syncable="YES">
+        <attribute name="age" optional="YES" attributeType="Integer 32" usesScalarValueType="NO"/>
+        <attribute name="city" optional="YES" attributeType="String"/>
+        <attribute name="country" optional="YES" attributeType="String"/>
+        <attribute name="dateOfBirth" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="email" optional="YES" attributeType="String"/>
+        <attribute name="firstName" optional="NO" attributeType="String" defaultValueString=""/>
+        <attribute name="gender" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="NO" attributeType="String"/>
+        <attribute name="largePhotoURL" optional="YES" attributeType="String"/>
+        <attribute name="lastName" optional="NO" attributeType="String" defaultValueString=""/>
+        <attribute name="mediumPhotoURL" optional="YES" attributeType="String"/>
+        <attribute name="nationality" optional="YES" attributeType="String"/>
+        <attribute name="phone" optional="YES" attributeType="String"/>
+        <attribute name="registeredDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="sortIndex" optional="NO" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="state" optional="YES" attributeType="String"/>
+        <attribute name="statusRaw" optional="NO" attributeType="String" defaultValueString="pending"/>
+        <attribute name="updatedAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="id"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+</model>

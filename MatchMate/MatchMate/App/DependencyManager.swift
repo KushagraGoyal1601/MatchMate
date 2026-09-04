@@ -18,15 +18,18 @@ final class DependencyManager {
 
     lazy var networkMonitor: NetworkMonitorProtocol = NetworkMonitor()
 
+    lazy var coreDataStack: CoreDataStack = CoreDataStack()
+
     lazy var profileNetworkRepository: ProfileNetworkRepositoryProtocol =
         ProfileNetworkRepository(networkService: networkService)
 
     lazy var profilePersistenceRepository: ProfilePersistenceRepositoryProtocol =
-        ProfilePersistenceRepository()
+        ProfilePersistenceRepository(stack: coreDataStack)
 
     lazy var profileRepository: ProfileRepositoryProtocol = ProfileRepository(
         network: profileNetworkRepository,
-        persistence: profilePersistenceRepository
+        persistence: profilePersistenceRepository,
+        monitor: networkMonitor
     )
 
     func makeProfileListViewModel() -> ProfileListViewModel {

@@ -17,12 +17,18 @@ struct ProfileListView: View {
 
     var body: some View {
         NavigationStack {
-            content
+            VStack(spacing: 0) {
+                if viewModel.isOffline {
+                    offlineBanner
+                }
+                content
+            }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Theme.pageBackground)
                 .navigationTitle("Profile Matches")
         }
         .task { await viewModel.loadInitialIfNeeded() }
+        .task { await viewModel.observeConnection() }
     }
 
     @ViewBuilder
@@ -91,6 +97,15 @@ struct ProfileListView: View {
                 .foregroundStyle(.secondary)
                 .padding(.vertical, 12)
         }
+    }
+
+    private var offlineBanner: some View {
+        Label("You're offline. Showing saved profiles.", systemImage: "wifi.slash")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .background(.thinMaterial)
     }
 
     private func errorState(message: String) -> some View {

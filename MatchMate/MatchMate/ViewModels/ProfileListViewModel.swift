@@ -15,6 +15,7 @@ final class ProfileListViewModel {
     private(set) var isLoading = false
     private(set) var errorMessage: String?
     private(set) var hasMorePages = true
+    private(set) var isOffline = false
 
     private var currentPage = 0
 
@@ -32,6 +33,12 @@ final class ProfileListViewModel {
 
     var showsEndOfList: Bool {
         !hasMorePages && !profiles.isEmpty
+    }
+
+    func observeConnection() async {
+        for await isConnected in repository.connectionUpdates() {
+            isOffline = !isConnected
+        }
     }
 
     func loadInitialIfNeeded() async {
