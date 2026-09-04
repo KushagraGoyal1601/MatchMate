@@ -9,14 +9,9 @@ import SwiftUI
 
 @main
 struct MatchMateApp: App {
-
-    private let dependencies = AppDependencies.live()
-
     var body: some Scene {
         WindowGroup {
-            ProfileListView(
-                viewModel: ProfileListViewModel(repository: dependencies.profileRepository)
-            )
+            ProfileListView(viewModel: DependencyManager.shared.makeProfileListViewModel())
         }
     }
 }

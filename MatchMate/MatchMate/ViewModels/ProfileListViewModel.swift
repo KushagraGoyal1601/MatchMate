@@ -18,10 +18,10 @@ final class ProfileListViewModel {
 
     private var currentPage = 0
 
-    private let repository: ProfileRepository
+    private let repository: ProfileRepositoryProtocol
     private let prefetchThreshold: Int
 
-    init(repository: ProfileRepository, prefetchThreshold: Int = 3) {
+    init(repository: ProfileRepositoryProtocol, prefetchThreshold: Int = 3) {
         self.repository = repository
         self.prefetchThreshold = prefetchThreshold
     }

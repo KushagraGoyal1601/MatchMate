@@ -109,9 +109,5 @@ struct ProfileListView: View {
 }
 
 #Preview {
-    ProfileListView(
-        viewModel: ProfileListViewModel(
-            repository: AppDependencies.live().profileRepository
-        )
-    )
+    ProfileListView(viewModel: DependencyManager.shared.makeProfileListViewModel())
 }

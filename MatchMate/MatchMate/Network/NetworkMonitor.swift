@@ -8,12 +8,12 @@
 import Foundation
 import Network
 
-protocol NetworkMonitoring: Sendable {
+protocol NetworkMonitorProtocol: Sendable {
     var isConnected: Bool { get }
     func connectionUpdates() -> AsyncStream<Bool>
 }
 
-final class NetworkMonitor: NetworkMonitoring, @unchecked Sendable {
+final class NetworkMonitor: NetworkMonitorProtocol, @unchecked Sendable {
 
     private struct State {
         var isConnected = true

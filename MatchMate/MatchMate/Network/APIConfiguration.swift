@@ -9,4 +9,6 @@ import Foundation
 
 enum APIConfiguration {
     static let baseURL = URL(string: "https://randomuser.me")!
+    static let pageSize = 10
+    static let seed = "matchmate"
 }

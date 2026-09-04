@@ -10,10 +10,8 @@ import Foundation
 enum NetworkError: Error, Equatable, Sendable {
     case notConnected
     case timedOut
-
     case cancelled
     case invalidURL
-    
     case invalidResponse
     case unacceptableStatusCode(Int)
     case decodingFailed(String)
@@ -36,17 +34,6 @@ extension NetworkError {
             self = .invalidURL
         default:
             self = .transportFailed(error.code)
-        }
-    }
-
-    var isRetryable: Bool {
-        switch self {
-        case .notConnected, .timedOut, .transportFailed:
-            return true
-        case .unacceptableStatusCode(let code):
-            return code == 408 || code == 429 || (500..<600).contains(code)
-        case .cancelled, .invalidURL, .invalidResponse, .decodingFailed, .unknown:
-            return false
         }
     }
 }
