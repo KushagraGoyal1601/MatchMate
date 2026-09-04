@@ -47,7 +47,7 @@ struct ProfileListView: View {
             ContentUnavailableView(
                 "No matches yet",
                 systemImage: "person.2.slash",
-                description: Text("Pull to refresh once you are back online.")
+                description: Text("There is nothing to show right now.")
             )
         } else {
             profileList
@@ -75,7 +75,6 @@ struct ProfileListView: View {
             .padding(.horizontal, Theme.Layout.cardHorizontalPadding)
             .padding(.vertical, Theme.Layout.cardSpacing)
         }
-        .refreshable { await viewModel.refresh() }
     }
 
     @ViewBuilder

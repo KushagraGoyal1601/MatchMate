@@ -53,10 +53,6 @@ final class ProfileListViewModel {
         await load(page: 1)
     }
 
-    func refresh() async {
-        await load(page: 1)
-    }
-
     func loadNextPageIfNeeded(after profile: MatchProfile) async {
         guard hasMorePages, errorMessage == nil, !isLoading else { return }
         guard let index = profiles.firstIndex(where: { $0.id == profile.id }),
