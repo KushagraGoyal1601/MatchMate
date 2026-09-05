@@ -11,8 +11,14 @@ struct ProfileListView: View {
 
     @State private var viewModel: ProfileListViewModel
 
-    init(viewModel: ProfileListViewModel) {
+    private let makeDetailViewModel: (MatchProfile) -> ProfileDetailViewModel
+
+    init(
+        viewModel: ProfileListViewModel,
+        makeDetailViewModel: @escaping (MatchProfile) -> ProfileDetailViewModel
+    ) {
         _viewModel = State(initialValue: viewModel)
+        self.makeDetailViewModel = makeDetailViewModel
     }
 
     var body: some View {
@@ -27,14 +33,23 @@ struct ProfileListView: View {
                 .background(Theme.pageBackground)
                 .navigationTitle("Profile Matches")
                 .navigationDestination(for: MatchProfile.self) { profile in
-                    ProfileDetailView(
-                        viewModel: DependencyManager.shared.makeProfileDetailViewModel(for: profile)
-                    )
+                    ProfileDetailView(viewModel: makeDetailViewModel(profile))
                 }
         }
         .task { await viewModel.loadInitialIfNeeded() }
         .task { await viewModel.observeConnection() }
         .task { await viewModel.observeProfileUpdates() }
+        .alert(
+            "Couldn't save your decision",
+            isPresented: Binding(
+                get: { viewModel.decisionErrorMessage != nil },
+                set: { if !$0 { viewModel.dismissDecisionError() } }
+            )
+        ) {
+            Button("OK") { viewModel.dismissDecisionError() }
+        } message: {
+            Text(viewModel.decisionErrorMessage ?? "")
+        }
     }
 
     @ViewBuilder
@@ -129,5 +144,10 @@ struct ProfileListView: View {
 }
 
 #Preview {
-    ProfileListView(viewModel: DependencyManager.shared.makeProfileListViewModel())
+    let dependencies = DependencyManager.shared
+
+    return ProfileListView(
+        viewModel: dependencies.makeProfileListViewModel(),
+        makeDetailViewModel: dependencies.makeProfileDetailViewModel(for:)
+    )
 }

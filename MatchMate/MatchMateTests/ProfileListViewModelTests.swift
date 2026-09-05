@@ -220,7 +220,35 @@ struct ProfileListViewModelTests {
         await viewModel.accept(viewModel.profiles[1])
 
         #expect(viewModel.profiles[1].status == .pending, "an optimistic update must roll back")
-        #expect(viewModel.errorMessage == "Disk is full")
+        #expect(viewModel.decisionErrorMessage == "Disk is full")
+        #expect(viewModel.errorMessage == nil, "a decision failure is not a page failure")
+    }
+
+    @Test func aFailedDecisionDoesNotBlockPagination() async {
+        let repository = StubProfileRepository()
+        let viewModel = ProfileListViewModel(repository: repository)
+        await viewModel.loadInitialIfNeeded()
+
+        repository.updateFailure = AppError.storageFailed("Disk is full")
+        await viewModel.accept(viewModel.profiles[0])
+        repository.updateFailure = nil
+
+        await viewModel.loadNextPageIfNeeded(after: viewModel.profiles.last!)
+
+        #expect(repository.requestedPages == [1, 2], "scrolling must still load pages")
+        #expect(viewModel.profiles.count == pageSize * 2)
+    }
+
+    @Test func dismissingADecisionErrorClearsIt() async {
+        let repository = StubProfileRepository()
+        let viewModel = ProfileListViewModel(repository: repository)
+        await viewModel.loadInitialIfNeeded()
+        repository.updateFailure = AppError.storageFailed("Disk is full")
+        await viewModel.accept(viewModel.profiles[0])
+
+        viewModel.dismissDecisionError()
+
+        #expect(viewModel.decisionErrorMessage == nil)
     }
 
     // MARK: - Connectivity

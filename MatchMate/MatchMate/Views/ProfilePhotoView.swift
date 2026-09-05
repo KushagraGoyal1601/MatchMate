@@ -7,10 +7,16 @@
 
 import SwiftUI
 
+extension EnvironmentValues {
+    @Entry var imageLoader: ImageLoading = ImageLoader()
+}
+
 struct ProfilePhotoView: View {
 
     let url: URL?
     let size: CGFloat
+
+    @Environment(\.imageLoader) private var imageLoader
 
     @State private var image: UIImage?
     @State private var isUnavailable = false
@@ -58,7 +64,7 @@ struct ProfilePhotoView: View {
         isUnavailable = false
 
         do {
-            let data = try await DependencyManager.shared.imageLoader.data(for: url)
+            let data = try await imageLoader.data(for: url)
             guard let decoded = UIImage(data: data) else {
                 isUnavailable = true
                 return

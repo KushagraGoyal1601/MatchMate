@@ -9,9 +9,16 @@ import SwiftUI
 
 @main
 struct MatchMateApp: App {
+
+    private let dependencies = DependencyManager.shared
+
     var body: some Scene {
         WindowGroup {
-            ProfileListView(viewModel: DependencyManager.shared.makeProfileListViewModel())
+            ProfileListView(
+                viewModel: dependencies.makeProfileListViewModel(),
+                makeDetailViewModel: dependencies.makeProfileDetailViewModel(for:)
+            )
+            .environment(\.imageLoader, dependencies.imageLoader)
         }
     }
 }

@@ -52,7 +52,8 @@ actor ProfileRepository: ProfileRepositoryProtocol {
 
     func profiles(page: Int) async throws -> [MatchProfile] {
         let startIndex = (page - 1) * pageSize
-        var networkFailure: Error?
+
+        var refreshFailure: Error?
 
         if monitor.isConnected {
             do {
@@ -61,7 +62,7 @@ actor ProfileRepository: ProfileRepositoryProtocol {
             } catch let error as NetworkError where error == .cancelled {
                 throw CancellationError()
             } catch {
-                networkFailure = error
+                refreshFailure = error
             }
         }
 
@@ -69,12 +70,13 @@ actor ProfileRepository: ProfileRepositoryProtocol {
         do {
             cached = try await persistence.profiles(fromSortIndex: startIndex, limit: pageSize)
         } catch {
-            throw mapped(networkFailure ?? error)
+            throw mapped(refreshFailure ?? error)
         }
 
         if cached.isEmpty {
-            if let networkFailure { throw mapped(networkFailure) }
-            if !monitor.isConnected { throw AppError.offline }
+            if let refreshFailure { throw mapped(refreshFailure) }
+            
+            if !monitor.isConnected, page == 1 { throw AppError.offline }
         }
 
         return cached
@@ -84,8 +86,6 @@ actor ProfileRepository: ProfileRepositoryProtocol {
         do {
             try await persistence.updateStatus(status, forID: id)
 
-            // Broadcast what the database actually holds, not what the caller
-            // asked for, so every screen converges on the same stored truth.
             if let stored = try await persistence.profile(id: id) {
                 broadcast(stored)
             }

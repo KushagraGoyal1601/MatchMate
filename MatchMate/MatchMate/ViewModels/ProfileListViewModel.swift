@@ -14,6 +14,7 @@ final class ProfileListViewModel {
     private(set) var profiles: [MatchProfile] = []
     private(set) var isLoading = false
     private(set) var errorMessage: String?
+    private(set) var decisionErrorMessage: String?
     private(set) var hasMorePages = true
     private(set) var isOffline = false
 
@@ -61,6 +62,10 @@ final class ProfileListViewModel {
         await load(page: currentPage + 1)
     }
 
+    func dismissDecisionError() {
+        decisionErrorMessage = nil
+    }
+
     func retry() async {
         await load(page: profiles.isEmpty ? 1 : currentPage + 1)
     }
@@ -105,7 +110,7 @@ final class ProfileListViewModel {
         } catch {
             guard let index = profiles.firstIndex(where: { $0.id == id }) else { return }
             profiles[index].status = previous
-            errorMessage = (error as? AppError)?.message ?? error.localizedDescription
+            decisionErrorMessage = (error as? AppError)?.message ?? error.localizedDescription
         }
     }
 

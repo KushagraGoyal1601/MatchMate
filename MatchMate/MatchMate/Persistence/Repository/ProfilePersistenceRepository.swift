@@ -25,7 +25,11 @@ struct ProfilePersistenceRepository: ProfilePersistenceRepositoryProtocol {
     func profiles(fromSortIndex startIndex: Int, limit: Int) async throws -> [MatchProfile] {
         try await stack.perform { context in
             let request = ProfileEntity.fetchRequest()
-            request.predicate = NSPredicate(format: "sortIndex >= %d", startIndex)
+            request.predicate = NSPredicate(
+                format: "sortIndex >= %d AND sortIndex < %d",
+                startIndex,
+                startIndex + limit
+            )
             request.sortDescriptors = [NSSortDescriptor(key: "sortIndex", ascending: true)]
             request.fetchLimit = limit
 
