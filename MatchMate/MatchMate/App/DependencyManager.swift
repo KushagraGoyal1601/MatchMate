@@ -18,6 +18,8 @@ final class DependencyManager {
 
     lazy var networkMonitor: NetworkMonitorProtocol = NetworkMonitor()
 
+    lazy var imageLoader: ImageLoading = ImageLoader()
+
     lazy var coreDataStack: CoreDataStack = CoreDataStack()
 
     lazy var profileNetworkRepository: ProfileNetworkRepositoryProtocol =

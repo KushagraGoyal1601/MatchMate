@@ -12,25 +12,31 @@ struct ProfilePhotoView: View {
     let url: URL?
     let size: CGFloat
 
+    @State private var image: UIImage?
+    @State private var isUnavailable = false
+
     var body: some View {
-        AsyncImage(url: url) { phase in
-            switch phase {
-            case .success(let image):
-                image.resizable().scaledToFill()
-            case .failure:
-                placeholder
-            case .empty:
-                ZStack {
-                    Theme.pageBackground
-                    ProgressView()
-                }
-            @unknown default:
-                placeholder
+        content
+            .frame(width: size, height: size)
+            .clipShape(.rect(cornerRadius: 8))
+            .accessibilityHidden(true)
+            .task(id: url) { await load() }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if let image {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+        } else if isUnavailable {
+            placeholder
+        } else {
+            ZStack {
+                Theme.pageBackground
+                ProgressView()
             }
         }
-        .frame(width: size, height: size)
-        .clipShape(.rect(cornerRadius: 8))
-        .accessibilityHidden(true)
     }
 
     private var placeholder: some View {
@@ -39,6 +45,29 @@ struct ProfilePhotoView: View {
             Image(systemName: "person.fill")
                 .font(.system(size: size / 3))
                 .foregroundStyle(.tertiary)
+        }
+    }
+
+    private func load() async {
+        guard let url else {
+            isUnavailable = true
+            return
+        }
+
+        image = nil
+        isUnavailable = false
+
+        do {
+            let data = try await DependencyManager.shared.imageLoader.data(for: url)
+            guard let decoded = UIImage(data: data) else {
+                isUnavailable = true
+                return
+            }
+            image = decoded
+        } catch is CancellationError {
+            return
+        } catch {
+            isUnavailable = true
         }
     }
 }
